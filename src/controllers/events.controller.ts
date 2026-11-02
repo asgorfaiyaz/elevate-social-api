@@ -10,8 +10,19 @@ function parseEventId(id: string): ObjectId | null {
   return /^[\da-f]{24}$/i.test(id) ? new ObjectId(id) : null;
 }
 
-export async function getEvents(_request: Request, response: Response) {
-  const data = await events.find().toArray();
+export async function getEvents(request: Request, response: Response) {
+  const { title, eventType } = request.query;
+  const filter: Document = {};
+  if (eventType) filter.eventType = eventType;
+  if (title) {
+    const escapedTitle = (title as string).replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&",
+    );
+    filter.title = { $regex: escapedTitle, $options: "i" };
+  }
+
+  const data = await events.find(filter).toArray();
   response.status(200).json({
     success: true,
     data: {
