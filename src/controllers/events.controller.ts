@@ -1,0 +1,82 @@
+import { ObjectId, type Document } from "mongodb";
+import type { Request, Response } from "express";
+import { db } from "../db/mongodb.js";
+
+const events = db.collection("events");
+
+function parseEventId(id: string): ObjectId | null {
+  // MongoDB stores document IDs as ObjectId values, but Express gives you the route parameter as a string.
+  // Parsing the ID converts that string into an ObjectId so the controller can query MongoDB by _id.
+  return /^[\da-f]{24}$/i.test(id) ? new ObjectId(id) : null;
+}
+
+export async function getEvents(_request: Request, response: Response) {
+  const data = await events.find().toArray();
+  response.status(200).json({
+    success: true,
+    data: {
+      events: data,
+    },
+  });
+}
+
+export async function getEventById(request: Request, response: Response) {
+  const id = parseEventId(request.params.id);
+  if (!id) return response.status(400).json({ message: "Invalid event id" });
+
+  const event = await events.findOne({ _id: id });
+  if (!event) return response.status(404).json({ message: "Event not found" });
+
+  response.status(200).json({
+    success: true,
+    data: {
+      event,
+    },
+  });
+}
+
+export async function createEvent(request: Request, response: Response) {
+  const event = request.body;
+  if (!event || typeof event !== "object" || Array.isArray(event)) {
+    return response
+      .status(400)
+      .json({ message: "Request body must be an object" });
+  }
+
+  const result = await events.insertOne(event as Document);
+  response.status(201).json({ ...event, _id: result.insertedId });
+}
+
+export async function updateEvent(request: Request, response: Response) {
+  const id = parseEventId(request.params.id);
+  if (!id) return response.status(400).json({ message: "Invalid event id" });
+
+  const updates = request.body as Document;
+  if (!updates || typeof updates !== "object" || Array.isArray(updates)) {
+    return response
+      .status(400)
+      .json({ message: "Request body must be an object" });
+  }
+  delete updates._id;
+
+  const result = await events.findOneAndUpdate(
+    { _id: id },
+    { $set: updates },
+    { returnDocument: "after" },
+  );
+  if (!result) return response.status(404).json({ message: "Event not found" });
+
+  response.json(result);
+}
+
+export async function deleteEvent(request: Request, response: Response) {
+  const id = parseEventId(request.params.id);
+  if (!id) return response.status(400).json({ message: "Invalid event id" });
+
+  const result = await events.deleteOne({ _id: id });
+  if (result.deletedCount === 0) {
+    return response.status(404).json({ message: "Event not found" });
+  }
+
+  response.status(204).send();
+}
