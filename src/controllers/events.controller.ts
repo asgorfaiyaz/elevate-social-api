@@ -21,6 +21,11 @@ function parseEventId(id: string): ObjectId | null {
   return /^[\da-f]{24}$/i.test(id) ? new ObjectId(id) : null;
 }
 
+async function isUserJoined(userEmail: string, eventId: ObjectId) {
+  const membership = await joinedEvents.findOne({ userEmail, eventId });
+  return membership !== null;
+}
+
 export async function getEvents(request: Request, response: Response) {
   const { title, eventType } = request.query;
   const filter: Document = {};
@@ -69,6 +74,28 @@ export async function getEventById(request: Request, response: Response) {
     data: {
       event,
     },
+  });
+}
+
+export async function getEventJoinStatus(request: Request, response: Response) {
+  const eventId = parseEventId(request.params.id);
+  if (!eventId) return response.status(400).json({ message: "Invalid event id" });
+
+  const userEmail = request.userEmail;
+  if (!userEmail) {
+    return response.status(401).json({ message: "Authentication required" });
+  }
+
+  const eventExists = await events.findOne(
+    { _id: eventId },
+    { projection: { _id: 1 } },
+  );
+  if (!eventExists) return response.status(404).json({ message: "Event not found" });
+
+  const isJoined = await isUserJoined(userEmail, eventId);
+  response.status(200).json({
+    success: true,
+    data: { isJoined },
   });
 }
 
