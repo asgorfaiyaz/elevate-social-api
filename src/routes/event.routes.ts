@@ -13,8 +13,8 @@ import { validateToken } from "../middlewares/validateToken.js";
 const eventRouter = Router();
 
 eventRouter.get("/", getEvents);
-eventRouter.get("/:id", getEventById);
 eventRouter.get("/joined", validateToken, getJoinedEvents);
+eventRouter.get("/:id", getEventById);
 eventRouter.post("/:id/join", validateToken, joinEvent);
 eventRouter.post("/", validateToken, createEvent);
 eventRouter.patch("/:id", validateToken, updateEvent);
