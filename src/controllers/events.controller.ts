@@ -79,7 +79,8 @@ export async function getEventById(request: Request, response: Response) {
 
 export async function getEventJoinStatus(request: Request, response: Response) {
   const eventId = parseEventId(request.params.id);
-  if (!eventId) return response.status(400).json({ message: "Invalid event id" });
+  if (!eventId)
+    return response.status(400).json({ message: "Invalid event id" });
 
   const userEmail = request.userEmail;
   if (!userEmail) {
@@ -90,7 +91,8 @@ export async function getEventJoinStatus(request: Request, response: Response) {
     { _id: eventId },
     { projection: { _id: 1 } },
   );
-  if (!eventExists) return response.status(404).json({ message: "Event not found" });
+  if (!eventExists)
+    return response.status(404).json({ message: "Event not found" });
 
   const isJoined = await isUserJoined(userEmail, eventId);
   response.status(200).json({
@@ -150,7 +152,10 @@ export async function createEvent(request: Request, response: Response) {
       .json({ message: "Request body must be an object" });
   }
 
-  const result = await events.insertOne(event as Document);
+  const result = await events.insertOne({
+    ...event,
+    eventDate: new Date(event.eventDate),
+  } as Document);
   response.status(201).json({ ...event, _id: result.insertedId });
 }
 
