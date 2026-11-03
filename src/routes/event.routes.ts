@@ -8,15 +8,16 @@ import {
   joinEvent,
   updateEvent,
 } from "../controllers/events.controller.js";
+import { validateToken } from "../middlewares/validateToken.js";
 
 const eventRouter = Router();
 
 eventRouter.get("/", getEvents);
-eventRouter.get("/joined", getJoinedEvents);
-eventRouter.post("/:id/join", joinEvent);
 eventRouter.get("/:id", getEventById);
-eventRouter.post("/", createEvent);
-eventRouter.patch("/:id", updateEvent);
-eventRouter.delete("/:id", deleteEvent);
+eventRouter.get("/joined", validateToken, getJoinedEvents);
+eventRouter.post("/:id/join", validateToken, joinEvent);
+eventRouter.post("/", validateToken, createEvent);
+eventRouter.patch("/:id", validateToken, updateEvent);
+eventRouter.delete("/:id", validateToken, deleteEvent);
 
 export default eventRouter;
