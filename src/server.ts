@@ -2,7 +2,8 @@ import { app } from "./app.js";
 import { env } from "./config/env.js";
 import connectToDatabase from "./db/mongodb.js";
 
-app.listen(env.PORT, async () => {
-  await connectToDatabase();
+await connectToDatabase();
+
+app.listen(env.PORT, () => {
   console.log(`Server running on port ${env.PORT}`);
 });
