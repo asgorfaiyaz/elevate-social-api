@@ -42,6 +42,21 @@ export async function getEvents(request: Request, response: Response) {
   });
 }
 
+export async function getMyEvents(request: Request, response: Response) {
+  const userEmail = request.userEmail;
+  if (!userEmail) {
+    return response.status(401).json({ message: "Authentication required" });
+  }
+
+  const data = await events.find({ createdByEmail: userEmail }).toArray();
+  response.status(200).json({
+    success: true,
+    data: {
+      events: data,
+    },
+  });
+}
+
 export async function getEventById(request: Request, response: Response) {
   const id = parseEventId(request.params.id);
   if (!id) return response.status(400).json({ message: "Invalid event id" });

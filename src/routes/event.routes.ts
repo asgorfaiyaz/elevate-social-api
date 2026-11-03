@@ -5,6 +5,7 @@ import {
   getEventById,
   getJoinedEvents,
   getEvents,
+  getMyEvents,
   joinEvent,
   updateEvent,
 } from "../controllers/events.controller.js";
@@ -14,6 +15,7 @@ const eventRouter = Router();
 
 eventRouter.get("/", getEvents);
 eventRouter.get("/joined", validateToken, getJoinedEvents);
+eventRouter.get("/my", validateToken, getMyEvents);
 eventRouter.get("/:id", getEventById);
 eventRouter.post("/:id/join", validateToken, joinEvent);
 eventRouter.post("/", validateToken, createEvent);
