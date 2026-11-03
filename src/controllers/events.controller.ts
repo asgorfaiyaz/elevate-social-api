@@ -3,6 +3,17 @@ import type { Request, Response } from "express";
 import { db } from "../db/mongodb.js";
 
 const events = db.collection("events");
+const joinedEvents = db.collection<{
+  userEmail: string;
+  eventId: ObjectId;
+}>("joinedEvents");
+
+function parseEmail(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+
+  const email = value.trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
 
 function parseEventId(id: string): ObjectId | null {
   // MongoDB stores document IDs as ObjectId values, but Express gives you the route parameter as a string.
@@ -43,6 +54,49 @@ export async function getEventById(request: Request, response: Response) {
     data: {
       event,
     },
+  });
+}
+
+export async function joinEvent(request: Request, response: Response) {
+  const eventId = parseEventId(request.params.id);
+  if (!eventId)
+    return response.status(400).json({ message: "Invalid event id" });
+
+  const userEmail = parseEmail(request.body?.userEmail);
+  if (!userEmail) {
+    return response
+      .status(400)
+      .json({ message: "A valid userEmail is required" });
+  }
+
+  const event = await events.findOne({ _id: eventId });
+  if (!event) return response.status(404).json({ message: "Event not found" });
+
+  await joinedEvents.insertOne({
+    userEmail,
+    eventId,
+  });
+
+  response.status(201).send();
+}
+
+export async function getJoinedEvents(request: Request, response: Response) {
+  const userEmail = parseEmail(request.query.userEmail);
+  if (!userEmail) {
+    return response
+      .status(400)
+      .json({ message: "A valid userEmail is required" });
+  }
+
+  const res = await joinedEvents.find({ userEmail }).toArray();
+  const eventIds = res.map((e) => e.eventId);
+  const data = eventIds.length
+    ? await events.find({ _id: { $in: eventIds } }).toArray()
+    : [];
+
+  response.status(200).json({
+    success: true,
+    data: { events: data },
   });
 }
 
