@@ -62,7 +62,7 @@ export async function joinEvent(request: Request, response: Response) {
   if (!eventId)
     return response.status(400).json({ message: "Invalid event id" });
 
-  const userEmail = parseEmail(request.body?.userEmail);
+  const userEmail = request.userEmail;
   if (!userEmail) {
     return response
       .status(400)
@@ -81,7 +81,7 @@ export async function joinEvent(request: Request, response: Response) {
 }
 
 export async function getJoinedEvents(request: Request, response: Response) {
-  const userEmail = parseEmail(request.query.userEmail);
+  const userEmail = request.userEmail;
   if (!userEmail) {
     return response
       .status(400)
